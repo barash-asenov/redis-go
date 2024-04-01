@@ -7,6 +7,8 @@ import (
 	"log"
 	"net"
 	"os"
+
+	"github.com/codecrafters-io/redis-starter-go/internal/parser"
 )
 
 func main() {
@@ -55,27 +57,50 @@ func logger(errCh <-chan error) {
 // worker will work until the connection is closed
 func worker(id int, connCh <-chan net.Conn, errCh chan<- error) {
 	for conn := range connCh {
-		defer conn.Close()
-
-		for {
-			_, err := readFromConnection(conn)
-			if err != nil {
-				if errors.Is(err, io.EOF) {
-					log.Println("Breaking due to EOF..., ID:", id)
-					break
-				}
-
-				errCh <- fmt.Errorf("Failed to read from connection %d: %w", id, err)
-			}
-
-			writeContent := []byte("+PONG\r\n")
-
-			_, err = conn.Write(writeContent)
-			if err != nil {
-				errCh <- fmt.Errorf("Failed to write to connection %d: %w", id, err)
-			}
+		err := handleConnection(id, conn)
+		if err != nil {
+			errCh <- fmt.Errorf("Failed to handle connection: %w", err)
 		}
 	}
+}
+
+func handleConnection(connID int, conn net.Conn) error {
+	defer conn.Close()
+
+	for {
+		content, err := readFromConnection(conn)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				log.Println("Breaking due to EOF..., ID:", connID)
+				break
+			}
+
+			return fmt.Errorf("Failed to read from connection %d: %w", connID, err)
+		}
+
+		parsed, err := parser.ParseRequest(content)
+		if err != nil {
+			return fmt.Errorf("Failed to parse redis request: %w", err)
+		}
+
+		writeContent := []byte("+")
+
+		if parsed.Command == "ECHO" && len(parsed.Payload) != 0 {
+			writeContent = append(writeContent, []byte(parsed.Payload[0])...)
+			writeContent = append(writeContent, []byte("\r\n")...)
+		} else {
+			writeContent = append(writeContent, []byte("PONG\r\n")...)
+		}
+
+		fmt.Println("write content:", string(writeContent))
+
+		_, err = conn.Write(writeContent)
+		if err != nil {
+			return fmt.Errorf("Failed to write to connection %d: %w", connID, err)
+		}
+	}
+
+	return nil
 }
 
 func readFromConnection(conn net.Conn) ([]byte, error) {
