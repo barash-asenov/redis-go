@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -19,28 +21,59 @@ func main() {
 		os.Exit(1)
 	}
 
-	conn, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
-	}
-	defer conn.Close()
+	connCh := make(chan net.Conn)
+	errCh := make(chan error)
 
-	log.Println("Will receive")
+	// starting 10 workers...
+	startWorkers(10, connCh, errCh)
+	go logger(errCh)
 
 	for {
-		content, err := readFromConnection(conn)
+		conn, err := l.Accept()
 		if err != nil {
-			log.Fatal("Failed to read from connection:", err)
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
 		}
 
-		log.Println("Received:", string(content))
+		// send the connection to a worker
+		connCh <- conn
+	}
+}
 
-		writeContent := []byte("+PONG\r\n")
+func startWorkers(quantitiy int, connCh <-chan net.Conn, errCh chan<- error) {
+	for i := 1; i <= quantitiy; i++ {
+		go worker(i, connCh, errCh)
+	}
+}
 
-		_, err = conn.Write(writeContent)
-		if err != nil {
-			log.Fatal("Failed to write to connection:", err)
+func logger(errCh <-chan error) {
+	for err := range errCh {
+		log.Println("Error happened:", err.Error())
+	}
+}
+
+// worker will work until the connection is closed
+func worker(id int, connCh <-chan net.Conn, errCh chan<- error) {
+	for conn := range connCh {
+		defer conn.Close()
+
+		for {
+			_, err := readFromConnection(conn)
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					log.Println("Breaking due to EOF..., ID:", id)
+					break
+				}
+
+				errCh <- fmt.Errorf("Failed to read from connection %d: %w", id, err)
+			}
+
+			writeContent := []byte("+PONG\r\n")
+
+			_, err = conn.Write(writeContent)
+			if err != nil {
+				errCh <- fmt.Errorf("Failed to write to connection %d: %w", id, err)
+			}
 		}
 	}
 }
