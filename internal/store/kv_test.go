@@ -1,6 +1,7 @@
 package store
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,14 +20,14 @@ func TestKVStore_Get(t *testing.T) {
 	}{
 		{
 			name:  "when kvstore is empty",
-			s:     map[string]string{},
+			s:     NewKVStore(),
 			args:  args{key: "key-1"},
 			want:  "",
 			want1: false,
 		},
 		{
-			name:  "when kvstore is empty",
-			s:     map[string]string{"key-1": "val-1"},
+			name:  "when kvstore is not empty",
+			s:     KVStore{mu: &sync.Mutex{}, store: map[string]string{"key-1": "val-1"}},
 			args:  args{key: "key-1"},
 			want:  "val-1",
 			want1: true,
@@ -54,11 +55,11 @@ func TestKVStore_Set(t *testing.T) {
 		name     string
 		s        KVStore
 		args     args
-		expected KVStore
+		expected map[string]string
 	}{
 		{
 			name:     "when settings value",
-			s:        map[string]string{},
+			s:        NewKVStore(),
 			args:     args{key: "key-1", value: "val-1"},
 			expected: map[string]string{"key-1": "val-1"},
 		},
@@ -67,7 +68,7 @@ func TestKVStore_Set(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.s.Set(tt.args.key, tt.args.value)
 
-			assert.Equal(t, tt.s, tt.expected)
+			assert.Equal(t, tt.s.store, tt.expected)
 		})
 	}
 }

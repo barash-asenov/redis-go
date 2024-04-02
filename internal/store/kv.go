@@ -1,17 +1,29 @@
 package store
 
-type KVStore map[string]string
+import "sync"
+
+type KVStore struct {
+	store map[string]string
+	mu    *sync.Mutex
+}
 
 func NewKVStore() KVStore {
-	return map[string]string{}
+	return KVStore{
+		store: map[string]string{},
+		mu:    &sync.Mutex{},
+	}
 }
 
 func (s KVStore) Get(key string) (string, bool) {
-	val, exists := s[key]
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	val, exists := s.store[key]
 
 	return val, exists
 }
 
 func (s KVStore) Set(key, value string) {
-	s[key] = value
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.store[key] = value
 }
