@@ -9,7 +9,11 @@ import (
 	"os"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/parser"
+	"github.com/codecrafters-io/redis-starter-go/internal/payload"
+	"github.com/codecrafters-io/redis-starter-go/internal/store"
 )
+
+var kvStore = store.NewKVStore()
 
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -83,16 +87,25 @@ func handleConnection(connID int, conn net.Conn) error {
 			return fmt.Errorf("Failed to parse redis request: %w", err)
 		}
 
-		writeContent := []byte("+")
+		var writeContent []byte
 
 		if parsed.Command == "ECHO" && len(parsed.Payload) != 0 {
-			writeContent = append(writeContent, []byte(parsed.Payload[0])...)
-			writeContent = append(writeContent, []byte("\r\n")...)
-		} else {
-			writeContent = append(writeContent, []byte("PONG\r\n")...)
-		}
+			writeContent = payload.GenerateBulkString([]byte(parsed.Payload[0]))
+		} else if parsed.Command == "SET" && len(parsed.Payload) > 1 {
+			kvStore.Set(parsed.Payload[0], parsed.Payload[1])
 
-		fmt.Println("write content:", string(writeContent))
+			writeContent = payload.GenerateBasicString([]byte("OK"))
+		} else if parsed.Command == "GET" && len(parsed.Payload) != 0 {
+			val, found := kvStore.Get(parsed.Payload[0])
+
+			if !found {
+				writeContent = payload.GenerateNullString()
+			} else {
+				writeContent = payload.GenerateBulkString([]byte(val))
+			}
+		} else {
+			writeContent = payload.GenerateBasicString([]byte("PONG"))
+		}
 
 		_, err = conn.Write(writeContent)
 		if err != nil {
