@@ -7,6 +7,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/parser"
 	"github.com/codecrafters-io/redis-starter-go/internal/payload"
@@ -92,7 +94,17 @@ func handleConnection(connID int, conn net.Conn) error {
 		if parsed.Command == "ECHO" && len(parsed.Payload) != 0 {
 			writeContent = payload.GenerateBulkString([]byte(parsed.Payload[0]))
 		} else if parsed.Command == "SET" && len(parsed.Payload) > 1 {
-			kvStore.Set(parsed.Payload[0], parsed.Payload[1])
+			expirationMs := 0
+			if len(parsed.Payload) > 3 {
+				if strings.EqualFold(parsed.Payload[2], "PX") {
+					expirationMs, err = strconv.Atoi(parsed.Payload[3])
+					if err != nil {
+						return fmt.Errorf("Failed to convert expiration payload to int: %w", err)
+					}
+				}
+			}
+
+			kvStore.Set(parsed.Payload[0], parsed.Payload[1], int64(expirationMs))
 
 			writeContent = payload.GenerateBasicString([]byte("OK"))
 		} else if parsed.Command == "GET" && len(parsed.Payload) != 0 {

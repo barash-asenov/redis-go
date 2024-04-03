@@ -13,7 +13,7 @@ func TestKVStore_Get(t *testing.T) {
 	}
 	tests := []struct {
 		name  string
-		s     KVStore
+		s     *KVStore
 		args  args
 		want  string
 		want1 bool
@@ -27,7 +27,7 @@ func TestKVStore_Get(t *testing.T) {
 		},
 		{
 			name:  "when kvstore is not empty",
-			s:     KVStore{mu: &sync.Mutex{}, store: map[string]string{"key-1": "val-1"}},
+			s:     &KVStore{mu: &sync.Mutex{}, store: map[string]*Value{"key-1": {str: "val-1", perm: true}}},
 			args:  args{key: "key-1"},
 			want:  "val-1",
 			want1: true,
@@ -53,22 +53,26 @@ func TestKVStore_Set(t *testing.T) {
 	}
 	tests := []struct {
 		name     string
-		s        KVStore
+		s        *KVStore
 		args     args
-		expected map[string]string
+		expected map[string]*Value
 	}{
 		{
 			name:     "when settings value",
 			s:        NewKVStore(),
 			args:     args{key: "key-1", value: "val-1"},
-			expected: map[string]string{"key-1": "val-1"},
+			expected: map[string]*Value{"key-1": {str: "val-1", perm: true}},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.s.Set(tt.args.key, tt.args.value)
+			tt.s.Set(tt.args.key, tt.args.value, 0)
 
-			assert.Equal(t, tt.s.store, tt.expected)
+			for _, v := range tt.s.store {
+				v.exp = 0
+			}
+
+			assert.Equal(t, tt.expected, tt.s.store)
 		})
 	}
 }
