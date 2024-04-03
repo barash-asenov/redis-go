@@ -10,12 +10,16 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/codecrafters-io/redis-starter-go/internal/commands"
 	"github.com/codecrafters-io/redis-starter-go/internal/parser"
 	"github.com/codecrafters-io/redis-starter-go/internal/payload"
 	"github.com/codecrafters-io/redis-starter-go/internal/store"
 )
 
-var kvStore = store.NewKVStore()
+var (
+	kvStore     = store.NewKVStore()
+	typeCommand = commands.NewTypeCommand(kvStore)
+)
 
 func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -115,6 +119,8 @@ func handleConnection(connID int, conn net.Conn) error {
 			} else {
 				writeContent = payload.GenerateBulkString([]byte(val))
 			}
+		} else if parsed.Command == "TYPE" && len(parsed.Payload) != 0 {
+			writeContent = typeCommand.GetType(parsed.Payload[0])
 		} else {
 			writeContent = payload.GenerateBasicString([]byte("PONG"))
 		}
