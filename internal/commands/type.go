@@ -6,18 +6,24 @@ import (
 )
 
 type TypeCommand struct {
-	kvStore *store.KVStore
+	kvStore     *store.KVStore
+	streamStore *store.Stream
 }
 
-func NewTypeCommand(kvStore *store.KVStore) *TypeCommand {
+func NewTypeCommand(kvStore *store.KVStore, streamStore *store.Stream) *TypeCommand {
 	return &TypeCommand{
-		kvStore: kvStore,
+		kvStore:     kvStore,
+		streamStore: streamStore,
 	}
 }
 
 func (c *TypeCommand) GetType(key string) []byte {
 	if _, exists := c.kvStore.Get(key); exists {
 		return payload.GenerateBasicString([]byte("string"))
+	}
+
+	if _, exists := c.streamStore.Get(key); exists {
+		return payload.GenerateBasicString([]byte("stream"))
 	}
 
 	return payload.GenerateBasicString([]byte("none"))

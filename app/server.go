@@ -18,7 +18,8 @@ import (
 
 var (
 	kvStore     = store.NewKVStore()
-	typeCommand = commands.NewTypeCommand(kvStore)
+	streamStore = store.NewStream()
+	typeCommand = commands.NewTypeCommand(kvStore, streamStore)
 )
 
 func main() {
@@ -119,6 +120,22 @@ func handleConnection(connID int, conn net.Conn) error {
 			} else {
 				writeContent = payload.GenerateBulkString([]byte(val))
 			}
+		} else if parsed.Command == "XADD" && len(parsed.Payload) > 2 {
+			kvPairs := make(map[string]string)
+
+			key := parsed.Payload[0]
+			kvPairs["id"] = parsed.Payload[1]
+
+			for i := 2; i < len(parsed.Payload); i++ {
+				kvPairs[parsed.Payload[i-1]] = parsed.Payload[i]
+			}
+
+			res, err := streamStore.XAdd(key, kvPairs)
+			if err != nil {
+				return fmt.Errorf("Failed to add to XAdd: %w", err)
+			}
+
+			writeContent = res
 		} else if parsed.Command == "TYPE" && len(parsed.Payload) != 0 {
 			writeContent = typeCommand.GetType(parsed.Payload[0])
 		} else {
