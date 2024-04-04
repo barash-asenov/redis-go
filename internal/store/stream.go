@@ -24,7 +24,7 @@ func (s *Stream) XAdd(key string, kvPairs map[string]string) ([]byte, error) {
 
 	s.store[key] = kvPairs
 
-	return payload.GenerateBulkString([]byte(key)), nil
+	return payload.GenerateBulkString([]byte(kvPairs["id"])), nil
 }
 
 func (s *Stream) Get(key string) (map[string]string, bool) {
