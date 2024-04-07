@@ -22,9 +22,9 @@ func (c *TypeCommand) GetType(key string) []byte {
 		return payload.GenerateBasicString([]byte("string"))
 	}
 
-	if _, exists := c.streamStore.Get(key); exists {
-		return payload.GenerateBasicString([]byte("stream"))
-	}
+	// if _, exists := c.streamStore.Get(key); exists {
+	// 	return payload.GenerateBasicString([]byte("stream"))
+	// }
 
 	return payload.GenerateBasicString([]byte("none"))
 }

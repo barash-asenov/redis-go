@@ -3,35 +3,29 @@ package store
 import (
 	"sync"
 
-	"github.com/codecrafters-io/redis-starter-go/internal/payload"
+	"github.com/codecrafters-io/redis-starter-go/internal/structures/stream"
 )
 
 type Stream struct {
-	store map[string]map[string]string
+	store *stream.NumericTrie
 	mu    *sync.Mutex
 }
 
 func NewStream() *Stream {
 	return &Stream{
-		store: map[string]map[string]string{},
+		store: &stream.NumericTrie{},
 		mu:    &sync.Mutex{},
 	}
 }
 
-func (s *Stream) XAdd(key string, kvPairs map[string]string) ([]byte, error) {
+func (s *Stream) XAdd(key string, values map[string]string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.store[key] = kvPairs
+	err := s.store.Insert(key, values)
+	if err != nil {
+		return "", nil
+	}
 
-	return payload.GenerateBulkString([]byte(kvPairs["id"])), nil
-}
-
-func (s *Stream) Get(key string) (map[string]string, bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	kvPair, exists := s.store[key]
-
-	return kvPair, exists
+	return key, nil
 }

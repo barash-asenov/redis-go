@@ -135,7 +135,7 @@ func handleConnection(connID int, conn net.Conn) error {
 				return fmt.Errorf("Failed to add to XAdd: %w", err)
 			}
 
-			writeContent = res
+			writeContent = payload.GenerateBasicString([]byte(res))
 		} else if parsed.Command == "TYPE" && len(parsed.Payload) != 0 {
 			writeContent = typeCommand.GetType(parsed.Payload[0])
 		} else {
