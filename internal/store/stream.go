@@ -18,6 +18,15 @@ func NewStream() *Stream {
 	}
 }
 
+func (s *Stream) Exists(key string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	_, exists := s.store[key]
+
+	return exists
+}
+
 func (s *Stream) XAdd(key string, values map[string]string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
