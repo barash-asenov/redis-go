@@ -32,5 +32,5 @@ func (s *Stream) XAdd(key string, values map[string]string) (string, error) {
 		return "", err
 	}
 
-	return key, nil
+	return values["id"], nil
 }
