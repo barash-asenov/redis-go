@@ -132,10 +132,11 @@ func handleConnection(connID int, conn net.Conn) error {
 
 			res, err := streamStore.XAdd(key, kvPairs)
 			if err != nil {
-				return fmt.Errorf("Failed to add to XAdd: %w", err)
+				writeContent = payload.GenerateSimpleErrorString([]byte(err.Error()))
+			} else {
+				writeContent = payload.GenerateBasicString([]byte(res))
 			}
 
-			writeContent = payload.GenerateBasicString([]byte(res))
 		} else if parsed.Command == "TYPE" && len(parsed.Payload) != 0 {
 			writeContent = typeCommand.GetType(parsed.Payload[0])
 		} else {

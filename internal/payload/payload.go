@@ -1,6 +1,9 @@
 package payload
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
 
 func GenerateBulkString(payload []byte) []byte {
 	bulkString := make([]byte, 0, 256)
@@ -26,4 +29,8 @@ func GenerateBasicString(payload []byte) []byte {
 
 func GenerateNullString() []byte {
 	return []byte("$-1\r\n")
+}
+
+func GenerateSimpleErrorString(payload []byte) []byte {
+	return []byte(fmt.Sprintf("-%s\r\n", string(payload)))
 }

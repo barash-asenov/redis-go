@@ -7,13 +7,13 @@ import (
 )
 
 type Stream struct {
-	store *stream.NumericTrie
+	store map[string]*stream.NumericTrie
 	mu    *sync.Mutex
 }
 
 func NewStream() *Stream {
 	return &Stream{
-		store: &stream.NumericTrie{Root: &stream.Node{}},
+		store: map[string]*stream.NumericTrie{},
 		mu:    &sync.Mutex{},
 	}
 }
@@ -22,7 +22,12 @@ func (s *Stream) XAdd(key string, values map[string]string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	err := s.store.Insert(key, values)
+	_, exists := s.store[key]
+	if !exists {
+		s.store[key] = &stream.NumericTrie{Root: &stream.Node{}}
+	}
+
+	err := s.store[key].Insert(values["id"], values)
 	if err != nil {
 		return "", err
 	}
