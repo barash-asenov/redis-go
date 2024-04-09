@@ -28,7 +28,7 @@ func (t *NumericTrie) Insert(key string, value map[string]string) error {
 
 	timestampMilliDigits, sequence, err := ValidateAndParseKey(key)
 	if err != nil {
-		return fmt.Errorf("Unable to parse key: %w", err)
+		return err
 	}
 
 	currentNode := t.Root
@@ -43,13 +43,13 @@ func (t *NumericTrie) Insert(key string, value map[string]string) error {
 		}
 
 		if int(timestampDigit) < maxDigit && int(t.Depth) <= i+1 {
-			return fmt.Errorf("The ID specified in XADD is equal or smaller than the target stream top item")
+			return fmt.Errorf("ERR The ID specified in XADD is equal or smaller than the target stream top item")
 		}
 
 		if currentNode.Children[timestampDigit] != nil {
 			if i == len(timestampMilliDigits)-1 {
 				if sequence <= currentNode.Children[timestampDigit].BiggestSequence {
-					return fmt.Errorf("The ID specified in XADD is equal or smaller than the target stream top item")
+					return fmt.Errorf("ERR The ID specified in XADD is equal or smaller than the target stream top item")
 				}
 
 				currentNode.Children[timestampDigit].Data[sequence] = value
@@ -91,7 +91,7 @@ func ValidateAndParseKey(key string) ([]uint8, int64, error) {
 	}
 
 	if keyParts[0] == "0" && keyParts[1] == "0" {
-		return nil, 0, fmt.Errorf("The ID specified in XADD must be greater than 0-0")
+		return nil, 0, fmt.Errorf("ERR The ID specified in XADD must be greater than 0-0")
 	}
 
 	// Validate the fisrt part
