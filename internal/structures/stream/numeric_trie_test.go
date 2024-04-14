@@ -15,6 +15,7 @@ func TestInsert(t *testing.T) {
 		key           string
 		value         map[string]string
 		trie          *stream.NumericTrie
+		expectedId    string
 		expectedError error
 		expectedTrie  *stream.NumericTrie
 	}{
@@ -28,7 +29,7 @@ func TestInsert(t *testing.T) {
 			trie: &stream.NumericTrie{
 				Root: &stream.Node{},
 			},
-			expectedError: fmt.Errorf("Invalid format for the key. Please give {int64}-{int64} format"),
+			expectedError: fmt.Errorf("Invalid format for the key. Please give {int64}-{int64/*} format"),
 		},
 		"when input already exists": {
 			key: "0-1",
@@ -106,6 +107,7 @@ func TestInsert(t *testing.T) {
 			trie: &stream.NumericTrie{
 				Root: &stream.Node{},
 			},
+			expectedId: "100-5151",
 			expectedTrie: &stream.NumericTrie{
 				Root: &stream.Node{
 					Children: [10]*stream.Node{
@@ -166,6 +168,7 @@ func TestInsert(t *testing.T) {
 				},
 				Depth: 2,
 			},
+			expectedId: "100-0",
 			expectedTrie: &stream.NumericTrie{
 				Root: &stream.Node{
 					Children: [10]*stream.Node{
@@ -241,6 +244,7 @@ func TestInsert(t *testing.T) {
 				},
 				Depth: 3,
 			},
+			expectedId: "100-5",
 			expectedTrie: &stream.NumericTrie{
 				Root: &stream.Node{
 					Children: [10]*stream.Node{
@@ -269,13 +273,112 @@ func TestInsert(t *testing.T) {
 				Depth: 3,
 			},
 		},
+		"when auto incrementing non existing timestamp": {
+			key: "100-*",
+			value: map[string]string{
+				"key-5": "value-5",
+			},
+			trie: &stream.NumericTrie{
+				Root:  &stream.Node{},
+				Depth: 0,
+			},
+			expectedId: "100-0",
+			expectedTrie: &stream.NumericTrie{
+				Root: &stream.Node{
+					Children: [10]*stream.Node{
+						nil,
+						{
+							Children: [10]*stream.Node{
+								{
+									Children: [10]*stream.Node{
+										{
+											Data: map[int64]map[string]string{
+												0: {
+													"key-5": "value-5",
+												},
+											},
+											BiggestSequence: 0, // 100
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Depth: 3,
+			},
+		},
+		"when auto incrementing existing timestamp": {
+			key: "100-*",
+			value: map[string]string{
+				"key-5": "value-5",
+			},
+			expectedId: "100-6",
+			trie: &stream.NumericTrie{
+				Root: &stream.Node{
+					Children: [10]*stream.Node{
+						nil,
+						{
+							Children: [10]*stream.Node{
+								{
+									Children: [10]*stream.Node{
+										{
+											Data: map[int64]map[string]string{
+												0: {
+													"key-1": "value-1",
+												},
+												5: {
+													"key-1": "value-1",
+												},
+											},
+											BiggestSequence: 5, // 100
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Depth: 3,
+			},
+			expectedTrie: &stream.NumericTrie{
+				Root: &stream.Node{
+					Children: [10]*stream.Node{
+						nil,
+						{
+							Children: [10]*stream.Node{
+								{
+									Children: [10]*stream.Node{
+										{
+											Data: map[int64]map[string]string{
+												0: {
+													"key-1": "value-1",
+												},
+												5: {
+													"key-1": "value-1",
+												},
+												6: {
+													"key-5": "value-5",
+												},
+											},
+											BiggestSequence: 6, // 100
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Depth: 3,
+			},
+		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			trie := tc.trie
 
-			err := trie.Insert(tc.key, tc.value)
+			id, err := trie.Insert(tc.key, tc.value)
 
 			if tc.expectedError != nil {
 				require.Error(t, err)
@@ -285,6 +388,7 @@ func TestInsert(t *testing.T) {
 			}
 
 			require.NoError(t, err)
+			assert.Equal(t, tc.expectedId, id)
 			assert.Equal(t, tc.expectedTrie, trie)
 		})
 	}
