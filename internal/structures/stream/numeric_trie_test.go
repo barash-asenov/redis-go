@@ -3,6 +3,7 @@ package stream_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/structures/stream"
 
@@ -395,6 +396,47 @@ func TestInsert(t *testing.T) {
 				Depth: 1,
 			},
 		},
+		"when id is given as total wildcard": {
+			key: "*",
+			value: map[string]string{
+				"key-1": "value-1",
+			},
+			expectedId: "100-0",
+			trie: stream.NewNumericTrie(func() time.Time {
+				return time.Date(1970, 1, 1, 0, 0, 0, int(100*time.Millisecond.Nanoseconds()), time.UTC)
+			}),
+			expectedTrie: &stream.NumericTrie{
+				Root: &stream.Node{
+					Children: [10]*stream.Node{
+						nil,
+						{
+							Children: [10]*stream.Node{
+								{
+									Children: [10]*stream.Node{
+										{
+											Data: map[int64]map[string]string{
+												0: {
+													"key-1": "value-1",
+												},
+											},
+											BiggestSequence: 0, // 100
+										},
+									},
+								},
+							},
+						},
+						nil,
+						nil,
+						nil,
+						nil,
+						nil,
+						nil,
+						nil,
+					},
+				},
+				Depth: 3,
+			},
+		},
 	}
 
 	for name, tc := range testCases {
@@ -412,7 +454,7 @@ func TestInsert(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedId, id)
-			assert.Equal(t, tc.expectedTrie, trie)
+			assert.EqualExportedValues(t, tc.expectedTrie, trie)
 		})
 	}
 }

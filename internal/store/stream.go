@@ -2,6 +2,7 @@ package store
 
 import (
 	"sync"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/structures/stream"
 )
@@ -33,7 +34,7 @@ func (s *Stream) XAdd(key string, values map[string]string) (string, error) {
 
 	_, exists := s.store[key]
 	if !exists {
-		s.store[key] = &stream.NumericTrie{Root: &stream.Node{}}
+		s.store[key] = stream.NewNumericTrie(time.Now)
 	}
 
 	id, err := s.store[key].Insert(values["id"], values)

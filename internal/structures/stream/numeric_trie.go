@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const DigitCount = 10
@@ -17,6 +18,16 @@ type Node struct {
 type NumericTrie struct {
 	Root  *Node
 	Depth int64
+
+	nowFn func() time.Time
+}
+
+func NewNumericTrie(nowFn func() time.Time) *NumericTrie {
+	return &NumericTrie{
+		Root: &Node{},
+
+		nowFn: nowFn,
+	}
 }
 
 // Key 0-0 is not accepted
@@ -24,6 +35,10 @@ type NumericTrie struct {
 func (t *NumericTrie) Insert(key string, value map[string]string) (string, error) {
 	if t == nil || t.Root == nil {
 		return "", fmt.Errorf("Invalid trie")
+	}
+
+	if key == "*" {
+		key = fmt.Sprintf("%d-%s", t.nowFn().UnixMilli(), "*")
 	}
 
 	timestampMilliDigits, sequence, err := validateAndParseKey(key)
