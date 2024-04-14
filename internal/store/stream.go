@@ -36,10 +36,10 @@ func (s *Stream) XAdd(key string, values map[string]string) (string, error) {
 		s.store[key] = &stream.NumericTrie{Root: &stream.Node{}}
 	}
 
-	err := s.store[key].Insert(values["id"], values)
+	id, err := s.store[key].Insert(values["id"], values)
 	if err != nil {
 		return "", err
 	}
 
-	return values["id"], nil
+	return id, nil
 }
