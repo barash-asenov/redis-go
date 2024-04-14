@@ -372,6 +372,29 @@ func TestInsert(t *testing.T) {
 				Depth: 3,
 			},
 		},
+		"when key is given 0-* on empty": {
+			key: "0-*",
+			value: map[string]string{
+				"key-5": "value-5",
+			},
+			expectedId: "0-1",
+			trie:       &stream.NumericTrie{Root: &stream.Node{}},
+			expectedTrie: &stream.NumericTrie{
+				Root: &stream.Node{
+					Children: [10]*stream.Node{
+						{
+							Data: map[int64]map[string]string{
+								1: {
+									"key-5": "value-5",
+								},
+							},
+							BiggestSequence: 1, // 0
+						},
+					},
+				},
+				Depth: 1,
+			},
+		},
 	}
 
 	for name, tc := range testCases {

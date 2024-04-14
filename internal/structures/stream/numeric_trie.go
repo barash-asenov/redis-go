@@ -48,6 +48,10 @@ func (t *NumericTrie) Insert(key string, value map[string]string) (string, error
 			if currentNode.Children[timestampDigit] != nil {
 				sequenceNumber = currentNode.Children[timestampDigit].BiggestSequence + 1
 			}
+
+			if timestampMilliDigits == "0" {
+				sequenceNumber = 1
+			}
 		} else {
 			sequenceNumber, err = strconv.ParseInt(sequence, 10, 64)
 			if err != nil {
