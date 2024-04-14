@@ -34,3 +34,25 @@ func GenerateNullString() []byte {
 func GenerateSimpleErrorString(payload []byte) []byte {
 	return []byte(fmt.Sprintf("-%s\r\n", string(payload)))
 }
+
+func GenerateNestedListToString(list []interface{}) (string, error) {
+	str := fmt.Sprintf("*%d\r\n", len(list))
+
+	for _, elem := range list {
+		switch val := elem.(type) {
+		case string:
+			str += string(GenerateBulkString([]byte(val)))
+		case []interface{}:
+			res, err := GenerateNestedListToString(val)
+			if err != nil {
+				return "", fmt.Errorf("Failed: %w", err)
+			}
+
+			str += res
+		default:
+			return "", fmt.Errorf("Unexpected type: %T\n", val)
+		}
+	}
+
+	return str, nil
+}
