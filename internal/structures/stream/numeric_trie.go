@@ -139,16 +139,31 @@ func (t *NumericTrie) Insert(key string, value map[string]string) (string, error
 	return insertedId, nil
 }
 
-func uint8SliceToString(slice []uint8) string {
-	fmt.Printf("slice: %s\n", slice)
-	fmt.Printf("slice: %+v\n", slice)
-	str := make([]byte, len(slice))
-	for i, v := range slice {
-		fmt.Println("i:", v)
-		str[i] = byte(v)
+// Beging and End provided
+// Validate that begin cannot be smaller than end, but they can be same
+// They can only include timestamp values, they don't need to include sequence part
+func (t *NumericTrie) Range(begin string, end string) ([]Data, error) {
+	if t == nil || t.Root == nil {
+		return nil, fmt.Errorf("Invalid trie")
 	}
-	fmt.Printf("str is: %+v -- %+v", string(str), str)
-	return string(str)
+
+	beginTimestamp := begin[0:strings.Index(begin, "-")]
+	endTimestamp := end[0:strings.Index(begin, "-")]
+
+	beginTimestampInt, err := strconv.Atoi(beginTimestamp)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to convert beginTimestamp to int: %w", err)
+	}
+	endTimestampInt, err := strconv.Atoi(endTimestamp)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to convert endTimestamp to int: %w", err)
+	}
+
+	if beginTimestampInt < endTimestampInt {
+		return nil, fmt.Errorf("Invalid range given, begin cannot be smaller than end")
+	}
+
+	return nil, fmt.Errorf("Not implemented")
 }
 
 // Key should have the following format;
