@@ -14,7 +14,7 @@ import (
 func TestInsert(t *testing.T) {
 	testCases := map[string]struct {
 		key           string
-		value         map[string]string
+		value         stream.Data
 		trie          *stream.NumericTrie
 		expectedId    string
 		expectedError error
@@ -39,7 +39,7 @@ func TestInsert(t *testing.T) {
 					Children: [10]*stream.Node{
 						{
 							BiggestSequence: 1,
-							Data:            map[int64]map[string]string{},
+							Data:            map[int64]stream.Data{},
 						},
 					},
 				},
@@ -54,7 +54,7 @@ func TestInsert(t *testing.T) {
 						nil,
 						{
 							BiggestSequence: 1, // 1-1
-							Data:            map[int64]map[string]string{},
+							Data:            map[int64]stream.Data{},
 						},
 					},
 				},
@@ -71,7 +71,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when bigger sequence already exists": {
 			key: "100-1",
-			value: map[string]string{
+			value: stream.Data{
 				"key-1": "value-1",
 			},
 			trie: &stream.NumericTrie{
@@ -83,7 +83,7 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]map[string]string{
+											Data: map[int64]stream.Data{
 												5: {
 													"key-5": "value-5",
 												},
@@ -102,7 +102,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when adding value to empty trie": {
 			key: "100-5151",
-			value: map[string]string{
+			value: stream.Data{
 				"key-10": "value-100",
 			},
 			trie: &stream.NumericTrie{
@@ -118,7 +118,7 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]map[string]string{
+											Data: map[int64]stream.Data{
 												5151: {
 													"key-10": "value-100",
 												},
@@ -136,7 +136,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when 99-0 exists and tries to add 100-0": {
 			key: "100-0",
-			value: map[string]string{
+			value: stream.Data{
 				"key-1": "value-1",
 			},
 			trie: &stream.NumericTrie{
@@ -161,7 +161,7 @@ func TestInsert(t *testing.T) {
 								nil,
 								nil,
 								{
-									Data: map[int64]map[string]string{},
+									Data: map[int64]stream.Data{},
 								},
 							},
 						},
@@ -179,7 +179,7 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]map[string]string{
+											Data: map[int64]stream.Data{
 												0: {
 													"key-1": "value-1",
 												},
@@ -207,7 +207,7 @@ func TestInsert(t *testing.T) {
 								nil,
 								nil,
 								{
-									Data: map[int64]map[string]string{},
+									Data: map[int64]stream.Data{},
 								},
 							},
 						},
@@ -218,7 +218,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when appending to an existing sequence node": {
 			key: "100-5",
-			value: map[string]string{
+			value: stream.Data{
 				"key-5": "value-5",
 			},
 			trie: &stream.NumericTrie{
@@ -230,7 +230,7 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]map[string]string{
+											Data: map[int64]stream.Data{
 												0: {
 													"key-1": "value-1",
 												},
@@ -255,7 +255,7 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]map[string]string{
+											Data: map[int64]stream.Data{
 												0: {
 													"key-1": "value-1",
 												},
@@ -276,7 +276,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when auto incrementing non existing timestamp": {
 			key: "100-*",
-			value: map[string]string{
+			value: stream.Data{
 				"key-5": "value-5",
 			},
 			trie: &stream.NumericTrie{
@@ -293,7 +293,7 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]map[string]string{
+											Data: map[int64]stream.Data{
 												0: {
 													"key-5": "value-5",
 												},
@@ -311,7 +311,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when auto incrementing existing timestamp": {
 			key: "100-*",
-			value: map[string]string{
+			value: stream.Data{
 				"key-5": "value-5",
 			},
 			expectedId: "100-6",
@@ -324,7 +324,7 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]map[string]string{
+											Data: map[int64]stream.Data{
 												0: {
 													"key-1": "value-1",
 												},
@@ -351,7 +351,7 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]map[string]string{
+											Data: map[int64]stream.Data{
 												0: {
 													"key-1": "value-1",
 												},
@@ -375,7 +375,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when key is given 0-* on empty": {
 			key: "0-*",
-			value: map[string]string{
+			value: stream.Data{
 				"key-5": "value-5",
 			},
 			expectedId: "0-1",
@@ -384,7 +384,7 @@ func TestInsert(t *testing.T) {
 				Root: &stream.Node{
 					Children: [10]*stream.Node{
 						{
-							Data: map[int64]map[string]string{
+							Data: map[int64]stream.Data{
 								1: {
 									"key-5": "value-5",
 								},
@@ -398,7 +398,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when id is given as total wildcard": {
 			key: "*",
-			value: map[string]string{
+			value: stream.Data{
 				"key-1": "value-1",
 			},
 			expectedId: "100-0",
@@ -414,7 +414,7 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]map[string]string{
+											Data: map[int64]stream.Data{
 												0: {
 													"key-1": "value-1",
 												},

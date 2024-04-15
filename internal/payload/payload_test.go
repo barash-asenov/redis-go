@@ -42,7 +42,7 @@ func TestGenerateSimpleErrorString(t *testing.T) {
 		args           []interface{}
 		expectedResult string
 	}{
-		"when XRANGE result given with 2 elements": {
+		"when XRANGE result given with 2 elements as nested interface": {
 			args: []interface{}{
 				[]interface{}{
 					"1526985054069-0",

@@ -9,10 +9,28 @@ import (
 
 const DigitCount = 10
 
+type Data map[string]string
+
+func (d *Data) ToInterface(id string) interface{} {
+	structuedInterface := make([]interface{}, 0, 2)
+
+	structuedInterface = append(structuedInterface, interface{}(id))
+
+	values := make([]interface{}, 0, len(*d)*2)
+
+	for k, val := range *d {
+		values = append(values, interface{}(k), interface{}(val))
+	}
+
+	structuedInterface = append(structuedInterface, values)
+
+	return structuedInterface
+}
+
 type Node struct {
 	Children        [DigitCount]*Node
-	Data            map[int64]map[string]string // Only last nodes contain data, this also means this is a terminate node if this value is not null
-	BiggestSequence int64                       // We can maintain this value in order to avoid looping through the data every single time
+	Data            map[int64]Data // Only last nodes contain data, this also means this is a terminate node if this value is not null
+	BiggestSequence int64          // We can maintain this value in order to avoid looping through the data every single time
 }
 
 type NumericTrie struct {
@@ -104,7 +122,7 @@ func (t *NumericTrie) Insert(key string, value map[string]string) (string, error
 
 		if i == len(timestampMilliDigits)-1 {
 			// Data exists only when it's a terminate node
-			newNode.Data = map[int64]map[string]string{}
+			newNode.Data = map[int64]Data{}
 
 			// Biggest sequence
 			newNode.Data[sequenceNumber] = value
