@@ -36,13 +36,6 @@ func TestGenerateBulkString(t *testing.T) {
 			}
 		})
 	}
-
-	data := stream.Data{
-		"temperature": "36",
-		"humidity":    "95",
-	}
-
-	data.ToInterface("asdasd")
 }
 
 func TestGenerateNestedListToString(t *testing.T) {
@@ -77,19 +70,29 @@ func TestGenerateNestedListToString(t *testing.T) {
 			args: []interface{}{
 				func() interface{} {
 					data := stream.Data{
-						"temperature": "36",
-						"humidity":    "95",
+						ID: "1526985054069-0",
+						Values: []string{
+							"temperature",
+							"36",
+							"humidity",
+							"95",
+						},
 					}
 
-					return data.ToInterface("1526985054069-0")
+					return data.ToInterface()
 				}(),
 				func() interface{} {
 					data := stream.Data{
-						"temperature": "37",
-						"humidity":    "94",
+						ID: "1526985054079-0",
+						Values: []string{
+							"temperature",
+							"37",
+							"humidity",
+							"94",
+						},
 					}
 
-					return data.ToInterface("1526985054079-0")
+					return data.ToInterface()
 				}(),
 			},
 			expectedResult: "*2\r\n*2\r\n$15\r\n1526985054069-0\r\n*4\r\n$11\r\ntemperature\r\n$2\r\n36\r\n$8\r\nhumidity\r\n$2\r\n95\r\n*2\r\n$15\r\n1526985054079-0\r\n*4\r\n$11\r\ntemperature\r\n$2\r\n37\r\n$8\r\nhumidity\r\n$2\r\n94\r\n",

@@ -15,7 +15,7 @@ import (
 func TestInsert(t *testing.T) {
 	testCases := map[string]struct {
 		key           string
-		value         stream.Data
+		values        map[string]string
 		trie          *stream.NumericTrie
 		expectedId    string
 		expectedError error
@@ -40,7 +40,7 @@ func TestInsert(t *testing.T) {
 					Children: [10]*stream.Node{
 						{
 							BiggestSequence: 1,
-							Data:            map[int64]stream.Data{},
+							Data:            map[int64]*stream.Data{},
 						},
 					},
 				},
@@ -55,7 +55,7 @@ func TestInsert(t *testing.T) {
 						nil,
 						{
 							BiggestSequence: 1, // 1-1
-							Data:            map[int64]stream.Data{},
+							Data:            map[int64]*stream.Data{},
 						},
 					},
 				},
@@ -72,7 +72,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when bigger sequence already exists": {
 			key: "100-1",
-			value: stream.Data{
+			values: map[string]string{
 				"key-1": "value-1",
 			},
 			trie: &stream.NumericTrie{
@@ -84,9 +84,13 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]stream.Data{
+											Data: map[int64]*stream.Data{
 												5: {
-													"key-5": "value-5",
+													ID: "100-5",
+													Values: []string{
+														"key-5",
+														"value-5",
+													},
 												},
 											},
 											BiggestSequence: 5, // 100
@@ -103,7 +107,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when adding value to empty trie": {
 			key: "100-5151",
-			value: stream.Data{
+			values: map[string]string{
 				"key-10": "value-100",
 			},
 			trie: &stream.NumericTrie{
@@ -119,9 +123,13 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]stream.Data{
+											Data: map[int64]*stream.Data{
 												5151: {
-													"key-10": "value-100",
+													ID: "100-5151",
+													Values: []string{
+														"key-10",
+														"value-100",
+													},
 												},
 											},
 											BiggestSequence: 5151, // 100
@@ -137,7 +145,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when 99-0 exists and tries to add 100-0": {
 			key: "100-0",
-			value: stream.Data{
+			values: map[string]string{
 				"key-1": "value-1",
 			},
 			trie: &stream.NumericTrie{
@@ -162,7 +170,7 @@ func TestInsert(t *testing.T) {
 								nil,
 								nil,
 								{
-									Data: map[int64]stream.Data{},
+									Data: map[int64]*stream.Data{},
 								},
 							},
 						},
@@ -180,9 +188,13 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]stream.Data{
+											Data: map[int64]*stream.Data{
 												0: {
-													"key-1": "value-1",
+													ID: "100-0",
+													Values: []string{
+														"key-1",
+														"value-1",
+													},
 												},
 											},
 											BiggestSequence: 0, // 100
@@ -208,7 +220,7 @@ func TestInsert(t *testing.T) {
 								nil,
 								nil,
 								{
-									Data: map[int64]stream.Data{},
+									Data: map[int64]*stream.Data{},
 								},
 							},
 						},
@@ -219,7 +231,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when appending to an existing sequence node": {
 			key: "100-5",
-			value: stream.Data{
+			values: map[string]string{
 				"key-5": "value-5",
 			},
 			trie: &stream.NumericTrie{
@@ -231,9 +243,13 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]stream.Data{
+											Data: map[int64]*stream.Data{
 												0: {
-													"key-1": "value-1",
+													ID: "100-0",
+													Values: []string{
+														"key-1",
+														"value-1",
+													},
 												},
 											},
 											BiggestSequence: 0, // 100
@@ -256,12 +272,20 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]stream.Data{
+											Data: map[int64]*stream.Data{
 												0: {
-													"key-1": "value-1",
+													ID: "100-0",
+													Values: []string{
+														"key-1",
+														"value-1",
+													},
 												},
 												5: {
-													"key-5": "value-5",
+													ID: "100-5",
+													Values: []string{
+														"key-5",
+														"value-5",
+													},
 												},
 											},
 											BiggestSequence: 5, // 100
@@ -277,7 +301,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when auto incrementing non existing timestamp": {
 			key: "100-*",
-			value: stream.Data{
+			values: map[string]string{
 				"key-5": "value-5",
 			},
 			trie: &stream.NumericTrie{
@@ -294,9 +318,13 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]stream.Data{
+											Data: map[int64]*stream.Data{
 												0: {
-													"key-5": "value-5",
+													ID: "100-0",
+													Values: []string{
+														"key-5",
+														"value-5",
+													},
 												},
 											},
 											BiggestSequence: 0, // 100
@@ -312,7 +340,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when auto incrementing existing timestamp": {
 			key: "100-*",
-			value: stream.Data{
+			values: map[string]string{
 				"key-5": "value-5",
 			},
 			expectedId: "100-6",
@@ -325,12 +353,20 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]stream.Data{
+											Data: map[int64]*stream.Data{
 												0: {
-													"key-1": "value-1",
+													ID: "100-0",
+													Values: []string{
+														"key-1",
+														"value-1",
+													},
 												},
 												5: {
-													"key-1": "value-1",
+													ID: "100-5",
+													Values: []string{
+														"key-1",
+														"value-1",
+													},
 												},
 											},
 											BiggestSequence: 5, // 100
@@ -352,15 +388,27 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]stream.Data{
+											Data: map[int64]*stream.Data{
 												0: {
-													"key-1": "value-1",
+													ID: "100-0",
+													Values: []string{
+														"key-1",
+														"value-1",
+													},
 												},
 												5: {
-													"key-1": "value-1",
+													ID: "100-5",
+													Values: []string{
+														"key-1",
+														"value-1",
+													},
 												},
 												6: {
-													"key-5": "value-5",
+													ID: "100-6",
+													Values: []string{
+														"key-6",
+														"value-6",
+													},
 												},
 											},
 											BiggestSequence: 6, // 100
@@ -376,7 +424,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when key is given 0-* on empty": {
 			key: "0-*",
-			value: stream.Data{
+			values: map[string]string{
 				"key-5": "value-5",
 			},
 			expectedId: "0-1",
@@ -385,9 +433,13 @@ func TestInsert(t *testing.T) {
 				Root: &stream.Node{
 					Children: [10]*stream.Node{
 						{
-							Data: map[int64]stream.Data{
+							Data: map[int64]*stream.Data{
 								1: {
-									"key-5": "value-5",
+									ID: "100-1",
+									Values: []string{
+										"key-5",
+										"value-5",
+									},
 								},
 							},
 							BiggestSequence: 1, // 0
@@ -399,7 +451,7 @@ func TestInsert(t *testing.T) {
 		},
 		"when id is given as total wildcard": {
 			key: "*",
-			value: stream.Data{
+			values: map[string]string{
 				"key-1": "value-1",
 			},
 			expectedId: "100-0",
@@ -415,9 +467,13 @@ func TestInsert(t *testing.T) {
 								{
 									Children: [10]*stream.Node{
 										{
-											Data: map[int64]stream.Data{
+											Data: map[int64]*stream.Data{
 												0: {
-													"key-1": "value-1",
+													ID: "100-0",
+													Values: []string{
+														"key-1",
+														"value-1",
+													},
 												},
 											},
 											BiggestSequence: 0, // 100
@@ -444,7 +500,7 @@ func TestInsert(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			trie := tc.trie
 
-			id, err := trie.Insert(tc.key, tc.value)
+			id, err := trie.Insert(tc.key, tc.values)
 
 			if tc.expectedError != nil {
 				require.Error(t, err)
@@ -465,7 +521,7 @@ func TestRange(t *testing.T) {
 		tree         *stream.NumericTrie
 		begin        string
 		end          string
-		expectedData []stream.Data
+		expectedData []*stream.Data
 	}{
 		"when full valid data given": {
 			tree: &stream.NumericTrie{
@@ -476,17 +532,25 @@ func TestRange(t *testing.T) {
 						{
 							Children: [10]*stream.Node{
 								{
-									Data: map[int64]stream.Data{ // 20-0
+									Data: map[int64]*stream.Data{ // 20-0
 										0: {
-											"key": "20-0",
+											ID: "20-0",
+											Values: []string{
+												"key",
+												"20-0",
+											},
 										},
 									},
 									BiggestSequence: 0,
 								},
 								{
-									Data: map[int64]stream.Data{ // 21-1
+									Data: map[int64]*stream.Data{ // 21-1
 										1: {
-											"key": "21-1",
+											ID: "21-1",
+											Values: []string{
+												"key",
+												"21-1",
+											},
 										},
 									},
 									BiggestSequence: 1,
@@ -502,9 +566,13 @@ func TestRange(t *testing.T) {
 												{
 													Children: [10]*stream.Node{
 														{
-															Data: map[int64]stream.Data{ // 30000-5
+															Data: map[int64]*stream.Data{ // 30000-5
 																5: {
-																	"key": "30000-5",
+																	ID: "30000-5",
+																	Values: []string{
+																		"key",
+																		"30000-5",
+																	},
 																},
 															},
 															Children:        [10]*stream.Node{},
@@ -518,9 +586,13 @@ func TestRange(t *testing.T) {
 								},
 								nil,
 								{
-									Data: map[int64]stream.Data{ // 32-8
+									Data: map[int64]*stream.Data{ // 32-8
 										8: {
-											"key": "32-8",
+											ID: "32-8",
+											Values: []string{
+												"key",
+												"32-8",
+											},
 										},
 									},
 									Children:        [10]*stream.Node{},
@@ -533,12 +605,20 @@ func TestRange(t *testing.T) {
 			},
 			begin: "21-0",
 			end:   "39-9",
-			expectedData: []stream.Data{
+			expectedData: []*stream.Data{
 				{
-					"key": "21-1",
+					ID: "21-1",
+					Values: []string{
+						"key",
+						"21-1",
+					},
 				},
 				{
-					"key": "32-8",
+					ID: "32-8",
+					Values: []string{
+						"key",
+						"32-8",
+					},
 				},
 			},
 		},
@@ -551,17 +631,25 @@ func TestRange(t *testing.T) {
 						{
 							Children: [10]*stream.Node{
 								{
-									Data: map[int64]stream.Data{ // 20-0
+									Data: map[int64]*stream.Data{ // 20-0
 										0: {
-											"key": "20-0",
+											ID: "20-0",
+											Values: []string{
+												"key",
+												"20-0",
+											},
 										},
 									},
 									BiggestSequence: 0,
 								},
 								{
-									Data: map[int64]stream.Data{ // 21-1
+									Data: map[int64]*stream.Data{ // 21-1
 										1: {
-											"key": "21-1",
+											ID: "20-1",
+											Values: []string{
+												"key",
+												"21-1",
+											},
 										},
 									},
 									BiggestSequence: 1,
@@ -577,9 +665,13 @@ func TestRange(t *testing.T) {
 												{
 													Children: [10]*stream.Node{
 														{
-															Data: map[int64]stream.Data{ // 30000-5
+															Data: map[int64]*stream.Data{ // 30000-5
 																5: {
-																	"key": "30000-5",
+																	ID: "30000-5",
+																	Values: []string{
+																		"key",
+																		"30000-5",
+																	},
 																},
 															},
 															Children:        [10]*stream.Node{},
@@ -593,9 +685,13 @@ func TestRange(t *testing.T) {
 								},
 								nil,
 								{
-									Data: map[int64]stream.Data{ // 32-8
+									Data: map[int64]*stream.Data{ // 32-8
 										8: {
-											"key": "32-8",
+											ID: "32-8",
+											Values: []string{
+												"key",
+												"32-8",
+											},
 										},
 									},
 									Children:        [10]*stream.Node{},
@@ -608,9 +704,13 @@ func TestRange(t *testing.T) {
 			},
 			begin: "100-0",
 			end:   "300000-9",
-			expectedData: []stream.Data{
+			expectedData: []*stream.Data{
 				{
-					"key": "30000-5",
+					ID: "30000-5",
+					Values: []string{
+						"key",
+						"30000-5",
+					},
 				},
 			},
 		},
@@ -623,17 +723,25 @@ func TestRange(t *testing.T) {
 						{
 							Children: [10]*stream.Node{
 								{
-									Data: map[int64]stream.Data{ // 20-0
+									Data: map[int64]*stream.Data{ // 20-0
 										0: {
-											"key": "20-0",
+											ID: "20-0",
+											Values: []string{
+												"key",
+												"20-0",
+											},
 										},
 									},
 									BiggestSequence: 0,
 								},
 								{
-									Data: map[int64]stream.Data{ // 21-1
+									Data: map[int64]*stream.Data{ // 21-1
 										1: {
-											"key": "21-1",
+											ID: "21-1",
+											Values: []string{
+												"key",
+												"21-1",
+											},
 										},
 									},
 									BiggestSequence: 1,
@@ -649,9 +757,13 @@ func TestRange(t *testing.T) {
 												{
 													Children: [10]*stream.Node{
 														{
-															Data: map[int64]stream.Data{ // 30000-5
+															Data: map[int64]*stream.Data{ // 30000-5
 																5: {
-																	"key": "30000-5",
+																	ID: "30000-5",
+																	Values: []string{
+																		"key",
+																		"30000-5",
+																	},
 																},
 															},
 															Children:        [10]*stream.Node{},
@@ -665,9 +777,13 @@ func TestRange(t *testing.T) {
 								},
 								nil,
 								{
-									Data: map[int64]stream.Data{ // 32-8
+									Data: map[int64]*stream.Data{ // 32-8
 										8: {
-											"key": "32-8",
+											ID: "32-8",
+											Values: []string{
+												"key",
+												"32-8",
+											},
 										},
 									},
 									Children:        [10]*stream.Node{},
@@ -680,9 +796,13 @@ func TestRange(t *testing.T) {
 			},
 			begin: "20-0",
 			end:   "20-9",
-			expectedData: []stream.Data{
+			expectedData: []*stream.Data{
 				{
-					"key": "20-0",
+					ID: "20-0",
+					Values: []string{
+						"key",
+						"20-0",
+					},
 				},
 			},
 		},
@@ -695,29 +815,49 @@ func TestRange(t *testing.T) {
 						{
 							Children: [10]*stream.Node{
 								{
-									Data: map[int64]stream.Data{ // 20-0
+									Data: map[int64]*stream.Data{ // 20-0
 										0: {
-											"key": "20-0",
+											ID: "20-0",
+											Values: []string{
+												"key",
+												"20-0",
+											},
 										},
 										1: {
-											"key": "20-1",
+											ID: "20-1",
+											Values: []string{
+												"key", "20-1",
+											},
 										},
 										2: {
-											"key": "20-2",
+											ID: "20-2",
+											Values: []string{
+												"key", "20-2",
+											},
 										},
 										3: {
-											"key": "20-3",
+											ID: "20-3",
+											Values: []string{
+												"key", "20-3",
+											},
 										},
 										4: {
-											"key": "20-4",
+											ID: "20-4",
+											Values: []string{
+												"key", "20-4",
+											},
 										},
 									},
 									BiggestSequence: 0,
 								},
 								{
-									Data: map[int64]stream.Data{ // 21-1
+									Data: map[int64]*stream.Data{ // 21-1
 										1: {
-											"key": "21-1",
+											ID: "21-1",
+											Values: []string{
+												"key",
+												"21-1",
+											},
 										},
 									},
 									BiggestSequence: 1,
@@ -733,9 +873,13 @@ func TestRange(t *testing.T) {
 												{
 													Children: [10]*stream.Node{
 														{
-															Data: map[int64]stream.Data{ // 30000-5
+															Data: map[int64]*stream.Data{ // 30000-5
 																5: {
-																	"key": "30000-5",
+																	ID: "30000-5",
+																	Values: []string{
+																		"key",
+																		"30000-5",
+																	},
 																},
 															},
 															Children:        [10]*stream.Node{},
@@ -749,9 +893,13 @@ func TestRange(t *testing.T) {
 								},
 								nil,
 								{
-									Data: map[int64]stream.Data{ // 32-8
+									Data: map[int64]*stream.Data{ // 32-8
 										8: {
-											"key": "32-8",
+											ID: "32-8",
+											Values: []string{
+												"key",
+												"32-8",
+											},
 										},
 									},
 									Children:        [10]*stream.Node{},
@@ -764,18 +912,34 @@ func TestRange(t *testing.T) {
 			},
 			begin: "20-0",
 			end:   "20-3",
-			expectedData: []stream.Data{
+			expectedData: []*stream.Data{
 				{
-					"key": "20-0",
+					ID: "20-0",
+					Values: []string{
+						"key",
+						"20-0",
+					},
 				},
 				{
-					"key": "20-1",
+					ID: "20-1",
+					Values: []string{
+						"key",
+						"20-1",
+					},
 				},
 				{
-					"key": "20-2",
+					ID: "20-2",
+					Values: []string{
+						"key",
+						"20-2",
+					},
 				},
 				{
-					"key": "20-3",
+					ID: "20-3",
+					Values: []string{
+						"key",
+						"20-3",
+					},
 				},
 			},
 		},
@@ -787,9 +951,8 @@ func TestRange(t *testing.T) {
 
 			require.NoError(t, err)
 
-			// order res
 			sort.Slice(res, func(i, j int) bool {
-				return res[i]["key"] < res[j]["key"]
+				return res[i].ID < res[j].ID
 			})
 
 			assert.Equal(t, tc.expectedData, res)

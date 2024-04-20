@@ -1,9 +1,11 @@
 package store
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/codecrafters-io/redis-starter-go/internal/payload"
 	"github.com/codecrafters-io/redis-starter-go/internal/structures/stream"
 )
 
@@ -43,4 +45,32 @@ func (s *Stream) XAdd(key string, values map[string]string) (string, error) {
 	}
 
 	return id, nil
+}
+
+func (s *Stream) XRead(key, begin, end string) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	trie, exists := s.store[key]
+	if !exists {
+		return "", fmt.Errorf("Key doesn't exist")
+	}
+
+	foundValues, err := trie.Range(begin, end)
+	if err != nil {
+		return "", fmt.Errorf("Failed to get range: %w", err)
+	}
+
+	values := make([]interface{}, 0)
+
+	for _, foundValue := range foundValues {
+		values = append(values, foundValue.ToInterface())
+	}
+
+	result, err := payload.GenerateNestedListToString(values)
+	if err != nil {
+		return "", fmt.Errorf("Failed to convert to Nested Redis List: %w", err)
+	}
+
+	return result, nil
 }

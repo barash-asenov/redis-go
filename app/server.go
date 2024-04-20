@@ -137,6 +137,18 @@ func handleConnection(connID int, conn net.Conn) error {
 				writeContent = payload.GenerateBasicString([]byte(res))
 			}
 
+		} else if parsed.Command == "XRANGE" && len(parsed.Payload) > 2 {
+			key := parsed.Payload[0]
+			begin := parsed.Payload[1]
+			end := parsed.Payload[2]
+
+			res, err := streamStore.XRead(key, begin, end)
+			if err != nil {
+				return fmt.Errorf("Failed during XRead: %w", err)
+			}
+
+			writeContent = []byte(res)
+
 		} else if parsed.Command == "TYPE" && len(parsed.Payload) != 0 {
 			writeContent = typeCommand.GetType(parsed.Payload[0])
 		} else {

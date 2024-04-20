@@ -12,17 +12,46 @@ const DigitCount = 10
 
 var ErrNotFound = errors.New("Not found")
 
-type Data map[string]string
+type Data struct {
+	ID     string
+	Values []string // Key Value Pairs
+}
 
-func (d *Data) ToInterface(id string) interface{} {
+func DataFromMap(ID string, values map[string]string) *Data {
+	data := &Data{}
+
+	data.ID = ID
+
+	for key, val := range values {
+		data.Values = append(data.Values, key, val)
+	}
+
+	return data
+}
+
+func (d *Data) AsMap() map[string]string {
+	res := make(map[string]string)
+
+	for i := 0; i < len(d.Values); i++ {
+		if i%2 == 0 {
+			continue
+		}
+
+		res[d.Values[i-1]] = d.Values[i]
+	}
+
+	return res
+}
+
+func (d *Data) ToInterface() interface{} {
 	structuedInterface := make([]interface{}, 0, 2)
 
-	structuedInterface = append(structuedInterface, interface{}(id))
+	structuedInterface = append(structuedInterface, interface{}(d.ID))
 
-	values := make([]interface{}, 0, len(*d)*2)
+	values := make([]interface{}, 0, len(d.Values)*2)
 
-	for k, val := range *d {
-		values = append(values, interface{}(k), interface{}(val))
+	for _, val := range d.Values {
+		values = append(values, interface{}(val))
 	}
 
 	structuedInterface = append(structuedInterface, values)
@@ -32,8 +61,8 @@ func (d *Data) ToInterface(id string) interface{} {
 
 type Node struct {
 	Children        [DigitCount]*Node
-	Data            map[int64]Data // Only last nodes contain data, this also means this is a terminate node if this value is not null
-	BiggestSequence int64          // We can maintain this value in order to avoid looping through the data every single time
+	Data            map[int64]*Data // Only last nodes contain data, this also means this is a terminate node if this value is not null
+	BiggestSequence int64           // We can maintain this value in order to avoid looping through the data every single time
 }
 
 type NumericTrie struct {
@@ -53,7 +82,7 @@ func NewNumericTrie(nowFn func() time.Time) *NumericTrie {
 
 // Key 0-0 is not accepted
 // Key should always be incremental
-func (t *NumericTrie) Insert(key string, value map[string]string) (string, error) {
+func (t *NumericTrie) Insert(key string, values map[string]string) (string, error) {
 	if t == nil || t.Root == nil {
 		return "", fmt.Errorf("Invalid trie")
 	}
@@ -112,9 +141,9 @@ func (t *NumericTrie) Insert(key string, value map[string]string) (string, error
 					return "", fmt.Errorf("ERR The ID specified in XADD is equal or smaller than the target stream top item")
 				}
 
-				currentNode.Children[timestampDigit].Data[sequenceNumber] = value
-				currentNode.Children[timestampDigit].BiggestSequence = sequenceNumber
 				insertedId = fmt.Sprintf("%s-%d", timestampMilliDigits, sequenceNumber)
+				currentNode.Children[timestampDigit].Data[sequenceNumber] = DataFromMap(insertedId, values)
+				currentNode.Children[timestampDigit].BiggestSequence = sequenceNumber
 			}
 
 			currentNode = currentNode.Children[timestampDigit]
@@ -124,13 +153,11 @@ func (t *NumericTrie) Insert(key string, value map[string]string) (string, error
 		newNode := &Node{}
 
 		if i == len(timestampMilliDigits)-1 {
-			// Data exists only when it's a terminate node
-			newNode.Data = map[int64]Data{}
-
 			// Biggest sequence
-			newNode.Data[sequenceNumber] = value
-			newNode.BiggestSequence = sequenceNumber
 			insertedId = fmt.Sprintf("%s-%d", timestampMilliDigits, sequenceNumber)
+			newNode.Data = make(map[int64]*Data)
+			newNode.Data[sequenceNumber] = DataFromMap(insertedId, values)
+			newNode.BiggestSequence = sequenceNumber
 		}
 
 		t.Depth = int64(i) + 1
@@ -145,7 +172,7 @@ func (t *NumericTrie) Insert(key string, value map[string]string) (string, error
 // Beging and End provided
 // Validate that begin cannot be smaller than end, but they can be same
 // They can only include timestamp values, they don't need to include sequence part
-func (t *NumericTrie) Range(begin string, end string) ([]Data, error) {
+func (t *NumericTrie) Range(begin string, end string) ([]*Data, error) {
 	if t == nil || t.Root == nil {
 		return nil, fmt.Errorf("Invalid trie")
 	}
@@ -184,12 +211,12 @@ func (t *NumericTrie) Range(begin string, end string) ([]Data, error) {
 	return foundNodes, nil
 }
 
-func (t *NumericTrie) findNestedNodes(beginTimestamp, endTimestamp, beginSequence, endSequence int, currentNode *Node, currentVal string) ([]Data, error) {
+func (t *NumericTrie) findNestedNodes(beginTimestamp, endTimestamp, beginSequence, endSequence int, currentNode *Node, currentVal string) ([]*Data, error) {
 	if currentNode == nil {
 		currentNode = t.Root
 	}
 
-	foundData := make([]Data, 0)
+	foundData := make([]*Data, 0)
 
 	for ind, subNode := range currentNode.Children {
 		if subNode == nil {
