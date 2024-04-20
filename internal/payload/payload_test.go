@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/codecrafters-io/redis-starter-go/internal/structures/stream"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -35,9 +36,16 @@ func TestGenerateBulkString(t *testing.T) {
 			}
 		})
 	}
+
+	data := stream.Data{
+		"temperature": "36",
+		"humidity":    "95",
+	}
+
+	data.ToInterface("asdasd")
 }
 
-func TestGenerateSimpleErrorString(t *testing.T) {
+func TestGenerateNestedListToString(t *testing.T) {
 	testCases := map[string]struct {
 		args           []interface{}
 		expectedResult string
@@ -62,6 +70,27 @@ func TestGenerateSimpleErrorString(t *testing.T) {
 						"94",
 					},
 				},
+			},
+			expectedResult: "*2\r\n*2\r\n$15\r\n1526985054069-0\r\n*4\r\n$11\r\ntemperature\r\n$2\r\n36\r\n$8\r\nhumidity\r\n$2\r\n95\r\n*2\r\n$15\r\n1526985054079-0\r\n*4\r\n$11\r\ntemperature\r\n$2\r\n37\r\n$8\r\nhumidity\r\n$2\r\n94\r\n",
+		},
+		"when data is coming from stream": {
+			args: []interface{}{
+				func() interface{} {
+					data := stream.Data{
+						"temperature": "36",
+						"humidity":    "95",
+					}
+
+					return data.ToInterface("1526985054069-0")
+				}(),
+				func() interface{} {
+					data := stream.Data{
+						"temperature": "37",
+						"humidity":    "94",
+					}
+
+					return data.ToInterface("1526985054079-0")
+				}(),
 			},
 			expectedResult: "*2\r\n*2\r\n$15\r\n1526985054069-0\r\n*4\r\n$11\r\ntemperature\r\n$2\r\n36\r\n$8\r\nhumidity\r\n$2\r\n95\r\n*2\r\n$15\r\n1526985054079-0\r\n*4\r\n$11\r\ntemperature\r\n$2\r\n37\r\n$8\r\nhumidity\r\n$2\r\n94\r\n",
 		},

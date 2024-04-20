@@ -2,6 +2,7 @@ package stream_test
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 	"time"
 
@@ -455,6 +456,343 @@ func TestInsert(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tc.expectedId, id)
 			assert.EqualExportedValues(t, tc.expectedTrie, trie)
+		})
+	}
+}
+
+func TestRange(t *testing.T) {
+	testCases := map[string]struct {
+		tree         *stream.NumericTrie
+		begin        string
+		end          string
+		expectedData []stream.Data
+	}{
+		"when full valid data given": {
+			tree: &stream.NumericTrie{
+				Root: &stream.Node{
+					Children: [10]*stream.Node{
+						nil,
+						nil,
+						{
+							Children: [10]*stream.Node{
+								{
+									Data: map[int64]stream.Data{ // 20-0
+										0: {
+											"key": "20-0",
+										},
+									},
+									BiggestSequence: 0,
+								},
+								{
+									Data: map[int64]stream.Data{ // 21-1
+										1: {
+											"key": "21-1",
+										},
+									},
+									BiggestSequence: 1,
+								},
+							},
+						},
+						{
+							Children: [10]*stream.Node{
+								{
+									Children: [10]*stream.Node{
+										{
+											Children: [10]*stream.Node{
+												{
+													Children: [10]*stream.Node{
+														{
+															Data: map[int64]stream.Data{ // 30000-5
+																5: {
+																	"key": "30000-5",
+																},
+															},
+															Children:        [10]*stream.Node{},
+															BiggestSequence: 5,
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+								nil,
+								{
+									Data: map[int64]stream.Data{ // 32-8
+										8: {
+											"key": "32-8",
+										},
+									},
+									Children:        [10]*stream.Node{},
+									BiggestSequence: 8,
+								},
+							},
+						},
+					},
+				},
+			},
+			begin: "21-0",
+			end:   "39-9",
+			expectedData: []stream.Data{
+				{
+					"key": "21-1",
+				},
+				{
+					"key": "32-8",
+				},
+			},
+		},
+		"only big value is searched": {
+			tree: &stream.NumericTrie{
+				Root: &stream.Node{
+					Children: [10]*stream.Node{
+						nil,
+						nil,
+						{
+							Children: [10]*stream.Node{
+								{
+									Data: map[int64]stream.Data{ // 20-0
+										0: {
+											"key": "20-0",
+										},
+									},
+									BiggestSequence: 0,
+								},
+								{
+									Data: map[int64]stream.Data{ // 21-1
+										1: {
+											"key": "21-1",
+										},
+									},
+									BiggestSequence: 1,
+								},
+							},
+						},
+						{
+							Children: [10]*stream.Node{
+								{
+									Children: [10]*stream.Node{
+										{
+											Children: [10]*stream.Node{
+												{
+													Children: [10]*stream.Node{
+														{
+															Data: map[int64]stream.Data{ // 30000-5
+																5: {
+																	"key": "30000-5",
+																},
+															},
+															Children:        [10]*stream.Node{},
+															BiggestSequence: 5,
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+								nil,
+								{
+									Data: map[int64]stream.Data{ // 32-8
+										8: {
+											"key": "32-8",
+										},
+									},
+									Children:        [10]*stream.Node{},
+									BiggestSequence: 8,
+								},
+							},
+						},
+					},
+				},
+			},
+			begin: "100-0",
+			end:   "300000-9",
+			expectedData: []stream.Data{
+				{
+					"key": "30000-5",
+				},
+			},
+		},
+		"only small value is searched": {
+			tree: &stream.NumericTrie{
+				Root: &stream.Node{
+					Children: [10]*stream.Node{
+						nil,
+						nil,
+						{
+							Children: [10]*stream.Node{
+								{
+									Data: map[int64]stream.Data{ // 20-0
+										0: {
+											"key": "20-0",
+										},
+									},
+									BiggestSequence: 0,
+								},
+								{
+									Data: map[int64]stream.Data{ // 21-1
+										1: {
+											"key": "21-1",
+										},
+									},
+									BiggestSequence: 1,
+								},
+							},
+						},
+						{
+							Children: [10]*stream.Node{
+								{
+									Children: [10]*stream.Node{
+										{
+											Children: [10]*stream.Node{
+												{
+													Children: [10]*stream.Node{
+														{
+															Data: map[int64]stream.Data{ // 30000-5
+																5: {
+																	"key": "30000-5",
+																},
+															},
+															Children:        [10]*stream.Node{},
+															BiggestSequence: 5,
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+								nil,
+								{
+									Data: map[int64]stream.Data{ // 32-8
+										8: {
+											"key": "32-8",
+										},
+									},
+									Children:        [10]*stream.Node{},
+									BiggestSequence: 8,
+								},
+							},
+						},
+					},
+				},
+			},
+			begin: "20-0",
+			end:   "20-9",
+			expectedData: []stream.Data{
+				{
+					"key": "20-0",
+				},
+			},
+		},
+		"can limit the search with sequence": {
+			tree: &stream.NumericTrie{
+				Root: &stream.Node{
+					Children: [10]*stream.Node{
+						nil,
+						nil,
+						{
+							Children: [10]*stream.Node{
+								{
+									Data: map[int64]stream.Data{ // 20-0
+										0: {
+											"key": "20-0",
+										},
+										1: {
+											"key": "20-1",
+										},
+										2: {
+											"key": "20-2",
+										},
+										3: {
+											"key": "20-3",
+										},
+										4: {
+											"key": "20-4",
+										},
+									},
+									BiggestSequence: 0,
+								},
+								{
+									Data: map[int64]stream.Data{ // 21-1
+										1: {
+											"key": "21-1",
+										},
+									},
+									BiggestSequence: 1,
+								},
+							},
+						},
+						{
+							Children: [10]*stream.Node{
+								{
+									Children: [10]*stream.Node{
+										{
+											Children: [10]*stream.Node{
+												{
+													Children: [10]*stream.Node{
+														{
+															Data: map[int64]stream.Data{ // 30000-5
+																5: {
+																	"key": "30000-5",
+																},
+															},
+															Children:        [10]*stream.Node{},
+															BiggestSequence: 5,
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+								nil,
+								{
+									Data: map[int64]stream.Data{ // 32-8
+										8: {
+											"key": "32-8",
+										},
+									},
+									Children:        [10]*stream.Node{},
+									BiggestSequence: 8,
+								},
+							},
+						},
+					},
+				},
+			},
+			begin: "20-0",
+			end:   "20-3",
+			expectedData: []stream.Data{
+				{
+					"key": "20-0",
+				},
+				{
+					"key": "20-1",
+				},
+				{
+					"key": "20-2",
+				},
+				{
+					"key": "20-3",
+				},
+			},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			res, err := tc.tree.Range(tc.begin, tc.end)
+
+			require.NoError(t, err)
+
+			// order res
+			sort.Slice(res, func(i, j int) bool {
+				return res[i]["key"] < res[j]["key"]
+			})
+
+			assert.Equal(t, tc.expectedData, res)
 		})
 	}
 }

@@ -1,6 +1,7 @@
 package stream
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -8,6 +9,8 @@ import (
 )
 
 const DigitCount = 10
+
+var ErrNotFound = errors.New("Not found")
 
 type Data map[string]string
 
@@ -148,7 +151,9 @@ func (t *NumericTrie) Range(begin string, end string) ([]Data, error) {
 	}
 
 	beginTimestamp := begin[0:strings.Index(begin, "-")]
-	endTimestamp := end[0:strings.Index(begin, "-")]
+	endTimestamp := end[0:strings.Index(end, "-")]
+	beginSequence := begin[strings.Index(begin, "-")+1:]
+	endSequence := end[strings.Index(end, "-")+1:]
 
 	beginTimestampInt, err := strconv.Atoi(beginTimestamp)
 	if err != nil {
@@ -158,12 +163,72 @@ func (t *NumericTrie) Range(begin string, end string) ([]Data, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to convert endTimestamp to int: %w", err)
 	}
-
-	if beginTimestampInt < endTimestampInt {
-		return nil, fmt.Errorf("Invalid range given, begin cannot be smaller than end")
+	beginSequenceInt, err := strconv.Atoi(beginSequence)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to convert beginSequence to int: %w", err)
+	}
+	endSequenceInt, err := strconv.Atoi(endSequence)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to convert endSequence to int: %w", err)
 	}
 
-	return nil, fmt.Errorf("Not implemented")
+	if beginTimestampInt > endTimestampInt {
+		return nil, fmt.Errorf("Invalid range given, begin cannot be bigger than end")
+	}
+
+	foundNodes, err := t.findNestedNodes(beginTimestampInt, endTimestampInt, beginSequenceInt, endSequenceInt, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	return foundNodes, nil
+}
+
+func (t *NumericTrie) findNestedNodes(beginTimestamp, endTimestamp, beginSequence, endSequence int, currentNode *Node, currentVal string) ([]Data, error) {
+	if currentNode == nil {
+		currentNode = t.Root
+	}
+
+	foundData := make([]Data, 0)
+
+	for ind, subNode := range currentNode.Children {
+		if subNode == nil {
+			continue
+		}
+
+		newValue := fmt.Sprintf("%s%d", currentVal, ind)
+		newValueInt, err := strconv.Atoi(newValue)
+		if err != nil {
+			return nil, err
+		}
+
+		if newValueInt > endTimestamp {
+			break
+		}
+
+		subNodes, err := t.findNestedNodes(beginTimestamp, endTimestamp, beginSequence, endSequence, subNode, newValue)
+		if err != nil {
+			return nil, err
+		}
+
+		foundData = append(foundData, subNodes...)
+
+		if subNode.Data != nil && newValueInt <= endTimestamp && newValueInt >= beginTimestamp {
+			for key, val := range subNode.Data {
+				if newValueInt == beginTimestamp && key < int64(beginSequence) {
+					continue
+				}
+
+				if newValueInt == endTimestamp && key > int64(endSequence) {
+					continue
+				}
+
+				foundData = append(foundData, val)
+			}
+		}
+	}
+
+	return foundData, nil
 }
 
 // Key should have the following format;
