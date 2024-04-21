@@ -2,6 +2,8 @@ package store
 
 import (
 	"fmt"
+	"math"
+	"strconv"
 	"sync"
 	"time"
 
@@ -54,6 +56,14 @@ func (s *Stream) XRead(key, begin, end string) (string, error) {
 	trie, exists := s.store[key]
 	if !exists {
 		return "", fmt.Errorf("Key doesn't exist")
+	}
+
+	if begin == "-" {
+		begin = "0-1"
+	}
+
+	if end == "-" {
+		end = strconv.Itoa(math.MaxInt64)
 	}
 
 	foundValues, err := trie.Range(begin, end)
