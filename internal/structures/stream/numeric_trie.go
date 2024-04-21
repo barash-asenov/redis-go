@@ -119,7 +119,8 @@ func (t *NumericTrie) Insert(key string, values []string) (string, error) {
 			}
 		}
 
-		if int(timestampDigit) < maxDigit && int(t.Depth) <= i+1 {
+		if int(timestampDigit) < maxDigit && int(t.Depth) >= len(timestampMilliDigits) {
+			fmt.Println("timestampDigit", timestampDigit, "maxDigit", maxDigit, "depth", t.Depth, "i+1", i+1)
 			return "", fmt.Errorf("ERR The ID specified in XADD is equal or smaller than the target stream top item")
 		}
 
@@ -131,7 +132,6 @@ func (t *NumericTrie) Insert(key string, values []string) (string, error) {
 				}
 
 				insertedId = fmt.Sprintf("%s-%d", timestampMilliDigits, sequenceNumber)
-				fmt.Println("insertingData:", &Data{ID: insertedId, Values: values})
 				currentNode.Children[timestampDigit].Data[sequenceNumber] = &Data{ID: insertedId, Values: values}
 				currentNode.Children[timestampDigit].BiggestSequence = sequenceNumber
 			}
@@ -145,7 +145,6 @@ func (t *NumericTrie) Insert(key string, values []string) (string, error) {
 		if i == len(timestampMilliDigits)-1 {
 			// Biggest sequence
 			insertedId = fmt.Sprintf("%s-%d", timestampMilliDigits, sequenceNumber)
-			fmt.Println("insertingData:", &Data{ID: insertedId, Values: values})
 			newNode.Data = make(map[int64]*Data)
 			newNode.Data[sequenceNumber] = &Data{ID: insertedId, Values: values}
 			newNode.BiggestSequence = sequenceNumber

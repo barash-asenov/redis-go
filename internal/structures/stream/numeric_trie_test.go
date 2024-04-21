@@ -63,6 +63,18 @@ func TestInsert(t *testing.T) {
 			},
 			expectedError: fmt.Errorf("The ID specified in XADD is equal or smaller than the target stream top item"),
 		},
+		"when bigger value already exists on a different digit": {
+			key: "1526985054069-0",
+			trie: func() *stream.NumericTrie {
+				newTrie := &stream.NumericTrie{Root: &stream.Node{}}
+
+				_, err := newTrie.Insert("1526985054079-0", []string{"key-1", "val-1"})
+				require.NoError(t, err)
+
+				return newTrie
+			}(),
+			expectedError: fmt.Errorf("The ID specified in XADD is equal or smaller than the target stream top item"),
+		},
 		"when trying to add 0-0 to empty trie": {
 			key: "0-0",
 			trie: &stream.NumericTrie{
