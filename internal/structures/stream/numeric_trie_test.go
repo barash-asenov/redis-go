@@ -406,8 +406,8 @@ func TestInsert(t *testing.T) {
 												6: {
 													ID: "100-6",
 													Values: []string{
-														"key-6",
-														"value-6",
+														"key-5",
+														"value-5",
 													},
 												},
 											},
@@ -435,7 +435,7 @@ func TestInsert(t *testing.T) {
 						{
 							Data: map[int64]*stream.Data{
 								1: {
-									ID: "100-1",
+									ID: "0-1",
 									Values: []string{
 										"key-5",
 										"value-5",
@@ -939,6 +939,119 @@ func TestRange(t *testing.T) {
 					Values: []string{
 						"key",
 						"20-3",
+					},
+				},
+			},
+		},
+		"when only timestamp value is given for xrange": {
+			tree: &stream.NumericTrie{
+				Root: &stream.Node{
+					Children: [10]*stream.Node{
+						nil,
+						nil,
+						{
+							Children: [10]*stream.Node{
+								{
+									Data: map[int64]*stream.Data{ // 20-0
+										0: {
+											ID: "20-0",
+											Values: []string{
+												"key",
+												"20-0",
+											},
+										},
+										35000: {
+											ID: "20-35000",
+											Values: []string{
+												"key",
+												"20-35000",
+											},
+										},
+										70000: {
+											ID: "20-70000",
+											Values: []string{
+												"key",
+												"20-70000",
+											},
+										},
+									},
+									BiggestSequence: 0,
+								},
+								{
+									Data: map[int64]*stream.Data{ // 21-1
+										1: {
+											ID: "21-1",
+											Values: []string{
+												"key",
+												"21-1",
+											},
+										},
+									},
+									BiggestSequence: 1,
+								},
+							},
+						},
+						{
+							Children: [10]*stream.Node{
+								{
+									Children: [10]*stream.Node{
+										{
+											Children: [10]*stream.Node{
+												{
+													Children: [10]*stream.Node{
+														{
+															Data: map[int64]*stream.Data{ // 30000-5
+																5: {
+																	ID: "30000-5",
+																	Values: []string{
+																		"key",
+																		"30000-5",
+																	},
+																},
+															},
+															Children:        [10]*stream.Node{},
+															BiggestSequence: 5,
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+								nil,
+								{
+									Data: map[int64]*stream.Data{ // 32-8
+										8: {
+											ID: "32-8",
+											Values: []string{
+												"key",
+												"32-8",
+											},
+										},
+									},
+									Children:        [10]*stream.Node{},
+									BiggestSequence: 8,
+								},
+							},
+						},
+					},
+				},
+			},
+			begin: "20",
+			end:   "20-65000",
+			expectedData: []*stream.Data{
+				{
+					ID: "20-0",
+					Values: []string{
+						"key",
+						"20-0",
+					},
+				},
+				{
+					ID: "20-35000",
+					Values: []string{
+						"key",
+						"20-35000",
 					},
 				},
 			},

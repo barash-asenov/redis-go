@@ -3,6 +3,7 @@ package stream
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -177,10 +178,15 @@ func (t *NumericTrie) Range(begin string, end string) ([]*Data, error) {
 		return nil, fmt.Errorf("Invalid trie")
 	}
 
-	beginTimestamp := begin[0:strings.Index(begin, "-")]
-	endTimestamp := end[0:strings.Index(end, "-")]
-	beginSequence := begin[strings.Index(begin, "-")+1:]
-	endSequence := end[strings.Index(end, "-")+1:]
+	beginTimestamp, beginSequence, found := strings.Cut(begin, "-")
+	if !found {
+		beginSequence = "0"
+	}
+
+	endTimestamp, endSequence, found := strings.Cut(end, "-")
+	if !found {
+		endSequence = strconv.Itoa(math.MaxInt64)
+	}
 
 	beginTimestampInt, err := strconv.Atoi(beginTimestamp)
 	if err != nil {
