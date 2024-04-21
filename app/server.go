@@ -12,6 +12,7 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/internal/commands"
 	"github.com/codecrafters-io/redis-starter-go/internal/parser"
+	"github.com/codecrafters-io/redis-starter-go/internal/parser/commands/streamparser"
 	"github.com/codecrafters-io/redis-starter-go/internal/payload"
 	"github.com/codecrafters-io/redis-starter-go/internal/store"
 )
@@ -142,7 +143,21 @@ func handleConnection(connID int, conn net.Conn) error {
 			begin := parsed.Payload[1]
 			end := parsed.Payload[2]
 
-			res, err := streamStore.XRead(key, begin, end)
+			res, err := streamStore.XRange(key, begin, end)
+			if err != nil {
+				return fmt.Errorf("Failed during XRange: %w", err)
+			}
+
+			writeContent = []byte(res)
+
+		} else if parsed.Command == "XREAD" && len(parsed.Payload) > 2 {
+
+			keys, ids, err := streamparser.ParseXReadCommand(parsed.Payload)
+			if err != nil {
+				return fmt.Errorf("Failed to parse: %w", err)
+			}
+
+			res, err := streamStore.XRead(keys, ids)
 			if err != nil {
 				return fmt.Errorf("Failed during XRead: %w", err)
 			}

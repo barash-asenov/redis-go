@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/internal/payload"
+	"github.com/codecrafters-io/redis-starter-go/internal/streamfn"
 	"github.com/codecrafters-io/redis-starter-go/internal/structures/stream"
 )
 
@@ -50,13 +51,27 @@ func (s *Stream) XAdd(key string, givenId string, values []string) (string, erro
 	return insertedId, nil
 }
 
-func (s *Stream) XRead(key, begin, end string) (string, error) {
+func (s *Stream) XRange(key, begin, end string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	values, err := s.xRange(key, begin, end)
+	if err != nil {
+		return "", fmt.Errorf("Failed to search by range: %w", err)
+	}
+
+	result, err := payload.GenerateNestedListToString(values)
+	if err != nil {
+		return "", fmt.Errorf("Failed to convert to Nested Redis List: %w", err)
+	}
+
+	return result, nil
+}
+
+func (s *Stream) xRange(key, begin, end string) ([]interface{}, error) {
 	trie, exists := s.store[key]
 	if !exists {
-		return "", fmt.Errorf("Key doesn't exist")
+		return nil, fmt.Errorf("Key doesn't exist")
 	}
 
 	if begin == "-" {
@@ -69,7 +84,7 @@ func (s *Stream) XRead(key, begin, end string) (string, error) {
 
 	foundValues, err := trie.Range(begin, end)
 	if err != nil {
-		return "", fmt.Errorf("Failed to get range: %w", err)
+		return nil, fmt.Errorf("Failed to get range: %w", err)
 	}
 
 	sort.Slice(foundValues, func(i, j int) bool {
@@ -82,7 +97,34 @@ func (s *Stream) XRead(key, begin, end string) (string, error) {
 		values = append(values, foundValue.ToInterface())
 	}
 
-	result, err := payload.GenerateNestedListToString(values)
+	return values, nil
+}
+
+func (s *Stream) XRead(keys []string, ids []string) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	res := make([]interface{}, 0)
+
+	for i, key := range keys {
+		if len(ids) < i+1 {
+			continue
+		}
+
+		id, err := streamfn.IncrementID(ids[i])
+		if err != nil {
+			return "", fmt.Errorf("Failed to increment ID: %w", err)
+		}
+
+		foundValues, err := s.xRange(key, id, "+")
+		if err != nil {
+			return "", fmt.Errorf("Failed to find values by range: %w", err)
+		}
+
+		res = append(res, []interface{}{key, foundValues})
+	}
+
+	result, err := payload.GenerateNestedListToString(res)
 	if err != nil {
 		return "", fmt.Errorf("Failed to convert to Nested Redis List: %w", err)
 	}

@@ -97,6 +97,35 @@ func TestGenerateNestedListToString(t *testing.T) {
 			},
 			expectedResult: "*2\r\n*2\r\n$15\r\n1526985054069-0\r\n*4\r\n$11\r\ntemperature\r\n$2\r\n36\r\n$8\r\nhumidity\r\n$2\r\n95\r\n*2\r\n$15\r\n1526985054079-0\r\n*4\r\n$11\r\ntemperature\r\n$2\r\n37\r\n$8\r\nhumidity\r\n$2\r\n94\r\n",
 		},
+		"when XREAD result given": {
+			args: []interface{}{
+				[]interface{}{
+					"stream_key",
+					[]interface{}{
+						[]interface{}{
+							"0-1",
+							[]interface{}{
+								"temperature",
+								"95",
+							},
+						},
+					},
+				},
+				[]interface{}{
+					"other_stream_key",
+					[]interface{}{
+						[]interface{}{
+							"0-2",
+							[]interface{}{
+								"humidity",
+								"97",
+							},
+						},
+					},
+				},
+			},
+			expectedResult: "*2\r\n*2\r\n$10\r\nstream_key\r\n*1\r\n*2\r\n$3\r\n0-1\r\n*2\r\n$11\r\ntemperature\r\n$2\r\n95\r\n*2\r\n$16\r\nother_stream_key\r\n*1\r\n*2\r\n$3\r\n0-2\r\n*2\r\n$8\r\nhumidity\r\n$2\r\n97\r\n",
+		},
 	}
 
 	for name, tc := range testCases {
