@@ -121,16 +121,16 @@ func handleConnection(connID int, conn net.Conn) error {
 				writeContent = payload.GenerateBulkString([]byte(val))
 			}
 		} else if parsed.Command == "XADD" && len(parsed.Payload) > 2 {
-			kvPairs := make(map[string]string)
+			kvPairs := []string{}
 
 			key := parsed.Payload[0]
-			kvPairs["id"] = parsed.Payload[1]
+			id := parsed.Payload[1]
 
 			for i := 2; i < len(parsed.Payload); i++ {
-				kvPairs[parsed.Payload[i-1]] = parsed.Payload[i]
+				kvPairs = append(kvPairs, parsed.Payload[i-1], parsed.Payload[i])
 			}
 
-			res, err := streamStore.XAdd(key, kvPairs)
+			res, err := streamStore.XAdd(key, id, kvPairs)
 			if err != nil {
 				writeContent = payload.GenerateSimpleErrorString([]byte(err.Error()))
 			} else {

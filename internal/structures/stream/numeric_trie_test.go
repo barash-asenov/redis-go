@@ -15,7 +15,7 @@ import (
 func TestInsert(t *testing.T) {
 	testCases := map[string]struct {
 		key           string
-		values        map[string]string
+		values        []string
 		trie          *stream.NumericTrie
 		expectedId    string
 		expectedError error
@@ -72,8 +72,8 @@ func TestInsert(t *testing.T) {
 		},
 		"when bigger sequence already exists": {
 			key: "100-1",
-			values: map[string]string{
-				"key-1": "value-1",
+			values: []string{
+				"key-1", "value-1",
 			},
 			trie: &stream.NumericTrie{
 				Root: &stream.Node{
@@ -107,8 +107,8 @@ func TestInsert(t *testing.T) {
 		},
 		"when adding value to empty trie": {
 			key: "100-5151",
-			values: map[string]string{
-				"key-10": "value-100",
+			values: []string{
+				"key-10", "value-100",
 			},
 			trie: &stream.NumericTrie{
 				Root: &stream.Node{},
@@ -145,8 +145,8 @@ func TestInsert(t *testing.T) {
 		},
 		"when 99-0 exists and tries to add 100-0": {
 			key: "100-0",
-			values: map[string]string{
-				"key-1": "value-1",
+			values: []string{
+				"key-1", "value-1",
 			},
 			trie: &stream.NumericTrie{
 				Root: &stream.Node{
@@ -231,8 +231,8 @@ func TestInsert(t *testing.T) {
 		},
 		"when appending to an existing sequence node": {
 			key: "100-5",
-			values: map[string]string{
-				"key-5": "value-5",
+			values: []string{
+				"key-5", "value-5",
 			},
 			trie: &stream.NumericTrie{
 				Root: &stream.Node{
@@ -301,8 +301,8 @@ func TestInsert(t *testing.T) {
 		},
 		"when auto incrementing non existing timestamp": {
 			key: "100-*",
-			values: map[string]string{
-				"key-5": "value-5",
+			values: []string{
+				"key-5", "value-5",
 			},
 			trie: &stream.NumericTrie{
 				Root:  &stream.Node{},
@@ -340,8 +340,8 @@ func TestInsert(t *testing.T) {
 		},
 		"when auto incrementing existing timestamp": {
 			key: "100-*",
-			values: map[string]string{
-				"key-5": "value-5",
+			values: []string{
+				"key-5", "value-5",
 			},
 			expectedId: "100-6",
 			trie: &stream.NumericTrie{
@@ -424,8 +424,8 @@ func TestInsert(t *testing.T) {
 		},
 		"when key is given 0-* on empty": {
 			key: "0-*",
-			values: map[string]string{
-				"key-5": "value-5",
+			values: []string{
+				"key-5", "value-5",
 			},
 			expectedId: "0-1",
 			trie:       &stream.NumericTrie{Root: &stream.Node{}},
@@ -451,10 +451,10 @@ func TestInsert(t *testing.T) {
 		},
 		"when id is given as total wildcard": {
 			key: "*",
-			values: map[string]string{
-				"key-1":       "value-1",
-				"temperature": "25",
-				"humidity":    "95",
+			values: []string{
+				"key-1", "value-1",
+				"temperature", "25",
+				"humidity", "95",
 			},
 			expectedId: "100-0",
 			trie: stream.NewNumericTrie(func() time.Time {

@@ -18,18 +18,6 @@ type Data struct {
 	Values []string // Key Value Pairs
 }
 
-func DataFromMap(ID string, values map[string]string) *Data {
-	data := &Data{}
-
-	data.ID = ID
-
-	for key, val := range values {
-		data.Values = append(data.Values, key, val)
-	}
-
-	return data
-}
-
 func (d *Data) AsMap() map[string]string {
 	res := make(map[string]string)
 
@@ -83,7 +71,7 @@ func NewNumericTrie(nowFn func() time.Time) *NumericTrie {
 
 // Key 0-0 is not accepted
 // Key should always be incremental
-func (t *NumericTrie) Insert(key string, values map[string]string) (string, error) {
+func (t *NumericTrie) Insert(key string, values []string) (string, error) {
 	if t == nil || t.Root == nil {
 		return "", fmt.Errorf("Invalid trie")
 	}
@@ -143,7 +131,7 @@ func (t *NumericTrie) Insert(key string, values map[string]string) (string, erro
 				}
 
 				insertedId = fmt.Sprintf("%s-%d", timestampMilliDigits, sequenceNumber)
-				currentNode.Children[timestampDigit].Data[sequenceNumber] = DataFromMap(insertedId, values)
+				currentNode.Children[timestampDigit].Data[sequenceNumber] = &Data{ID: insertedId, Values: values}
 				currentNode.Children[timestampDigit].BiggestSequence = sequenceNumber
 			}
 
@@ -157,7 +145,7 @@ func (t *NumericTrie) Insert(key string, values map[string]string) (string, erro
 			// Biggest sequence
 			insertedId = fmt.Sprintf("%s-%d", timestampMilliDigits, sequenceNumber)
 			newNode.Data = make(map[int64]*Data)
-			newNode.Data[sequenceNumber] = DataFromMap(insertedId, values)
+			newNode.Data[sequenceNumber] = &Data{ID: insertedId, Values: values}
 			newNode.BiggestSequence = sequenceNumber
 		}
 

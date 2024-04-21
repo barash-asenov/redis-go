@@ -30,7 +30,7 @@ func (s *Stream) Exists(key string) bool {
 	return exists
 }
 
-func (s *Stream) XAdd(key string, values map[string]string) (string, error) {
+func (s *Stream) XAdd(key string, id string, values []string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -38,9 +38,6 @@ func (s *Stream) XAdd(key string, values map[string]string) (string, error) {
 	if !exists {
 		s.store[key] = stream.NewNumericTrie(time.Now)
 	}
-
-	id := values["id"]
-	delete(values, "id")
 
 	id, err := s.store[key].Insert(id, values)
 	if err != nil {
