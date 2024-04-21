@@ -30,7 +30,7 @@ func (s *Stream) Exists(key string) bool {
 	return exists
 }
 
-func (s *Stream) XAdd(key string, id string, values []string) (string, error) {
+func (s *Stream) XAdd(key string, givenId string, values []string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -39,12 +39,12 @@ func (s *Stream) XAdd(key string, id string, values []string) (string, error) {
 		s.store[key] = stream.NewNumericTrie(time.Now)
 	}
 
-	id, err := s.store[key].Insert(id, values)
+	insertedId, err := s.store[key].Insert(givenId, values)
 	if err != nil {
 		return "", err
 	}
 
-	return id, nil
+	return insertedId, nil
 }
 
 func (s *Stream) XRead(key, begin, end string) (string, error) {

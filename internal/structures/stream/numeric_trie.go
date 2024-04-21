@@ -131,6 +131,7 @@ func (t *NumericTrie) Insert(key string, values []string) (string, error) {
 				}
 
 				insertedId = fmt.Sprintf("%s-%d", timestampMilliDigits, sequenceNumber)
+				fmt.Println("insertingData:", &Data{ID: insertedId, Values: values})
 				currentNode.Children[timestampDigit].Data[sequenceNumber] = &Data{ID: insertedId, Values: values}
 				currentNode.Children[timestampDigit].BiggestSequence = sequenceNumber
 			}
@@ -144,6 +145,7 @@ func (t *NumericTrie) Insert(key string, values []string) (string, error) {
 		if i == len(timestampMilliDigits)-1 {
 			// Biggest sequence
 			insertedId = fmt.Sprintf("%s-%d", timestampMilliDigits, sequenceNumber)
+			fmt.Println("insertingData:", &Data{ID: insertedId, Values: values})
 			newNode.Data = make(map[int64]*Data)
 			newNode.Data[sequenceNumber] = &Data{ID: insertedId, Values: values}
 			newNode.BiggestSequence = sequenceNumber

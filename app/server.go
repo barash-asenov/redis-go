@@ -126,7 +126,7 @@ func handleConnection(connID int, conn net.Conn) error {
 			key := parsed.Payload[0]
 			id := parsed.Payload[1]
 
-			for i := 2; i < len(parsed.Payload); i++ {
+			for i := 3; i < len(parsed.Payload); i += 2 {
 				kvPairs = append(kvPairs, parsed.Payload[i-1], parsed.Payload[i])
 			}
 
