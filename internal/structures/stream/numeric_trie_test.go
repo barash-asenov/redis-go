@@ -452,7 +452,9 @@ func TestInsert(t *testing.T) {
 		"when id is given as total wildcard": {
 			key: "*",
 			values: map[string]string{
-				"key-1": "value-1",
+				"key-1":       "value-1",
+				"temperature": "25",
+				"humidity":    "95",
 			},
 			expectedId: "100-0",
 			trie: stream.NewNumericTrie(func() time.Time {
@@ -473,6 +475,10 @@ func TestInsert(t *testing.T) {
 													Values: []string{
 														"key-1",
 														"value-1",
+														"temperature",
+														"25",
+														"humidity",
+														"95",
 													},
 												},
 											},

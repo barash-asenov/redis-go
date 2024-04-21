@@ -39,7 +39,10 @@ func (s *Stream) XAdd(key string, values map[string]string) (string, error) {
 		s.store[key] = stream.NewNumericTrie(time.Now)
 	}
 
-	id, err := s.store[key].Insert(values["id"], values)
+	id := values["id"]
+	delete(values, "id")
+
+	id, err := s.store[key].Insert(id, values)
 	if err != nil {
 		return "", err
 	}
