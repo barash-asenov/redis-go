@@ -3,6 +3,7 @@ package store
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -70,6 +71,10 @@ func (s *Stream) XRead(key, begin, end string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Failed to get range: %w", err)
 	}
+
+	sort.Slice(foundValues, func(i, j int) bool {
+		return foundValues[i].ID < foundValues[j].ID
+	})
 
 	values := make([]interface{}, 0)
 
