@@ -63,7 +63,7 @@ func (s *Stream) XRead(key, begin, end string) (string, error) {
 		begin = "0-1"
 	}
 
-	if end == "-" {
+	if end == "+" {
 		end = strconv.Itoa(math.MaxInt64)
 	}
 
